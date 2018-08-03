@@ -1,7 +1,6 @@
-MIT License
-
+The MIT License
+===============================================================================
 Copyright (c) 2018 Rob Ford
-
 Copyright (c) 2006, 2007 Marcin Kalicinski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
