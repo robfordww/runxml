@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-// NodeType enum
+// NodeType is the datatype descriping all possible node types
 type NodeType int
 
 // NodeType enum values
@@ -26,8 +26,8 @@ const (
 	Pi                          //!< A PI node. Name contains target. Value contains instructions.
 )
 
-// Base is the common fields of nodes
-type Base struct {
+// base contains the common fields of nodes
+type base struct {
 	Name   []byte       // Name of node
 	Value  []byte       // Value of node
 	Parent *GenericNode // Pointer to parent node
@@ -35,7 +35,7 @@ type Base struct {
 
 // GenericNode is the datastruct for all "node types" as defined above
 type GenericNode struct {
-	Base
+	base
 	NodeType       NodeType       // NodeType enum (doc, element etc.)
 	firstChild     *GenericNode   // pointer to first child node
 	lastChild      *GenericNode   // pointer to last child node
@@ -212,7 +212,7 @@ func (g *GenericNode) GetAttributes() []*AttributeNode {
 
 // AttributeNode represents the attribute (a="abc") of a node
 type AttributeNode struct {
-	Base
+	base
 	prev *AttributeNode
 	next *AttributeNode
 }

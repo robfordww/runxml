@@ -7,8 +7,8 @@ import (
 	"unicode/utf8"
 )
 
-// DecodeUTF16 to UTF8. Copied from bradleypeabody
-func DecodeUTF16(b []byte) ([]byte, error) {
+// decodeUTF16 to UTF8. Copied from bradleypeabody
+func decodeUTF16(b []byte) ([]byte, error) {
 	if len(b)%2 != 0 {
 		return nil, fmt.Errorf("Must have even length byte slice")
 	}

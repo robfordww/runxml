@@ -130,7 +130,7 @@ func (r *RunXML) parseNode() (*GenericNode, error) {
 		}
 	default:
 		// log.Println("Parselement")
-		return r.ParseElement()
+		return r.parseElement()
 	}
 
 	/*// skip undefined node types <!
@@ -141,8 +141,8 @@ func (r *RunXML) parseNode() (*GenericNode, error) {
 	return nil, err
 }
 
-// ParseAttributes parses the attribute of an element, returns a AttributeNode
-func (r *RunXML) ParseAttributes(element *GenericNode) error {
+// parseAttributes parses the attribute of an element, returns a AttributeNode
+func (r *RunXML) parseAttributes(element *GenericNode) error {
 	// repeat for each attribute
 	for lookupAttributeName[r.getCurrentByte()] == 1 {
 		start := r.position
@@ -193,8 +193,8 @@ func (r *RunXML) ParseAttributes(element *GenericNode) error {
 	return nil
 }
 
-// ParseElement parses element node
-func (r *RunXML) ParseElement() (*GenericNode, error) {
+// parseElement parses element node
+func (r *RunXML) parseElement() (*GenericNode, error) {
 	//fmt.Println("parse elem", r.position)
 	currentElement := newNode(Element)
 	// Extract element name
@@ -211,7 +211,7 @@ func (r *RunXML) ParseElement() (*GenericNode, error) {
 	r.skip(lookupWhitespace)
 
 	// Parse attributes
-	err := r.ParseAttributes(currentElement)
+	err := r.parseAttributes(currentElement)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (r *RunXML) ParseElement() (*GenericNode, error) {
 	c := r.getCurrentByte()
 	if c == '>' {
 		r.position++
-		if err := r.ParseNodeContents(currentElement); err != nil {
+		if err := r.parseNodeContents(currentElement); err != nil {
 			return nil, err
 		}
 	} else if c == '/' {
@@ -234,8 +234,8 @@ func (r *RunXML) ParseElement() (*GenericNode, error) {
 	return currentElement, nil
 }
 
-// ParseNodeContents Parse contents of the node - children, data etc.
-func (r *RunXML) ParseNodeContents(cn *GenericNode) error {
+// parseNodeContents Parse contents of the node - children, data etc.
+func (r *RunXML) parseNodeContents(cn *GenericNode) error {
 	// For all children and text
 	for {
 		//contentStart := r.position
@@ -331,7 +331,7 @@ func (r *RunXML) parseDocType() (*GenericNode, error) {
 func (r *RunXML) parseXMLDeclaration() (*GenericNode, error) {
 	nd := newNode(Declaration)
 	r.skip(lookupWhitespace)
-	r.ParseAttributes(nd)
+	r.parseAttributes(nd)
 	// expect closing tags after attributes
 	if !bytes.HasPrefix(r.sliceToEnd(), []byte("?>")) {
 		r.position += 2
@@ -470,7 +470,7 @@ func (r *RunXML) skipBOM() {
 		//log.Println("warning, utf16le")
 		// UTF 16 LE
 		var err error
-		r.data, err = DecodeUTF16(r.data)
+		r.data, err = decodeUTF16(r.data)
 		if err != nil {
 			panic(err)
 		}
@@ -479,7 +479,7 @@ func (r *RunXML) skipBOM() {
 		//log.Println("warning, utf16be")
 		// UTF 16 BE
 		var err error
-		r.data, err = DecodeUTF16(r.data)
+		r.data, err = decodeUTF16(r.data)
 		if err != nil {
 			panic(err)
 		}

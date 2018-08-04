@@ -12,7 +12,7 @@ func TestConvert(t *testing.T) {
 		0x65, 0x0, 0x20, 0x0, 0xf8, 0x0, 0x6c, 0x0,
 		0x21, 0x0, 0x20, 0x0, 0x3a, 0x0, 0x29, 0x0,
 	}
-	u8, err := DecodeUTF16(u16)
+	u8, err := decodeUTF16(u16)
 	if string(u8) != "En blå flaske øl! :)" || err != nil {
 		t.Fail()
 	}
@@ -29,7 +29,7 @@ func TestUnEvenLength(t *testing.T) {
 		0x21, 0x0, 0x20, 0x0, 0x3a, 0x0, 0x29, 0x0,
 		0x29,
 	}
-	_, err := DecodeUTF16(u16)
+	_, err := decodeUTF16(u16)
 	if err == nil {
 		t.Error("Expected uneven length to fail")
 	}
