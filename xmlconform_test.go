@@ -10,7 +10,8 @@ import (
 
 func TestInvalideFiles(t *testing.T) {
 	r := NewDefaultRunXML()
-	testdir := "xmltestfiles/xmlconf/xmltest/not-wf/sa/02*.xml"
+	// Not all tests are run; might be something that can be addressed later
+	testdir := "xmltestfiles/xmlconf/xmltest/not-wf/sa/0[0-3]*.xml"
 	f, err := filepath.Glob(testdir)
 	if err != nil {
 		t.Fatal(err)
@@ -30,6 +31,12 @@ func TestInvalideFiles(t *testing.T) {
 		"025.xml": true, // <doc>]]></doc>
 		"026.xml": true, // <doc>]]]></doc>
 		"029.xml": true, // <doc>abc]]]>def</doc>
+		"030.xml": true, // <doc>A form feed () is not legal in data</doc>
+		"031.xml": true, // <doc><?pi a form feed () is not allowed in a pi?></doc>
+		"032.xml": true, // <doc><!-- a form feed () is not allowed in a comment --></doc>
+		"033.xml": true, // <doc>abcdef</doc>
+		"034.xml": true, // <doc>A form-feed is not white space or a name character</doc>
+		"038.xml": true, // <doc x="foo" y="bar" x="baz"></doc>
 	}
 	testhelp(t, r, f, excludeList, false)
 }
@@ -162,12 +169,4 @@ func testhelpStock(fn string) {
 			break
 		}
 	}
-}
-
-// Debug support
-func _TestSpecificFile(t *testing.T) {
-	file := `xmltestfiles\xmlconf\xmltest\not-wf\sa\035.xml`
-	r := NewDefaultRunXML()
-	doc, err := r.ParseFile(file)
-	log.Println(doc, err)
 }

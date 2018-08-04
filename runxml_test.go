@@ -17,7 +17,6 @@ func TestSimpleXML(t *testing.T) {
 	if err == nil {
 		t.Fatal("should fail")
 	}
-	t.Log(err)
 }
 
 func TestSimpleXML2(t *testing.T) {
@@ -33,9 +32,11 @@ func TestSimpleXML2(t *testing.T) {
 	if docC != 8 {
 		t.Error("expected 5 children, found", docC)
 	}
-	for i := range doc.SendChildElements() {
-		t.Log("\n", i.String(), "\n")
+	count := 0
+	for range doc.SendChildElements() {
+		count++
 	}
+	t.Log("Number of child elements: ", count)
 }
 
 func TestSendCloseChildren(t *testing.T) {
@@ -47,16 +48,14 @@ func TestSendCloseChildren(t *testing.T) {
 		t.Fatal("should not fail", err)
 	}
 	count := 0
-	for i := range doc.SendCloseChildren() {
-		t.Log("\n", i.String(), "\n")
+	for range doc.SendCloseChildren() {
 		count++
 	}
 	if count != 1 {
 		t.Error("wrong number of children")
 	}
 	count = 0
-	for i := range doc.firstChild.SendCloseChildren() {
-		t.Log("\n", i.String(), "\n")
+	for range doc.firstChild.SendCloseChildren() {
 		count++
 	}
 	if count != 2 {

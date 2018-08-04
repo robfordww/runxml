@@ -1,3 +1,10 @@
+// Package runxml is a fast xml parser based on the RapidXML C++ library.
+//
+// Runxmls goal is to a provide a fast DOM parser and marshaller/unmarhaller
+// by using in-situ parsing and static generated code rather than reflection.
+
+//go:generate stringer -type=NodeType
+
 package runxml
 
 import (
@@ -7,7 +14,6 @@ import (
 // NodeType enum
 type NodeType int
 
-//go:generate stringer -type=NodeType
 // NodeType enum values
 const (
 	Document    NodeType = iota //!< A document node. Name and value are empty.
@@ -40,10 +46,10 @@ type GenericNode struct {
 }
 
 // Mempool for allocation
-var na NodeArena
+var na nodeArena
 
 func newNode(nodeType NodeType) *GenericNode {
-	n := na.Get()
+	n := na.get()
 	n.NodeType = nodeType
 	return n
 }
@@ -119,12 +125,17 @@ func (g *GenericNode) CountChildren() int {
 	return count
 }
 
-// SendCloseChildren returns a channel of pointers to
-// all direct children, but not their children.
+// SendCloseChildren returns a channel of pointers to  all direct children,
+// but not their children. This is useful for breadth first parsing
 func (g *GenericNode) SendCloseChildren() (ret chan *GenericNode) {
-	ret = make(chan *GenericNode, 100)
+	ret = make(chan *GenericNode, 8)
 	// traverse the siblings of the child
-	go func() {
+	go func(ret chan<- *GenericNode) {
+		if g.firstChild == nil {
+			// no children
+			close(ret)
+			return
+		}
 		for n := g.firstChild; ; n = n.nextSibling {
 			ret <- n
 			// if it is the last node, break
@@ -133,7 +144,7 @@ func (g *GenericNode) SendCloseChildren() (ret chan *GenericNode) {
 			}
 		}
 		close(ret)
-	}()
+	}(ret)
 	return ret
 }
 

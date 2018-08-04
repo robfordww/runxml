@@ -6,24 +6,24 @@ import (
 	"io/ioutil"
 )
 
-// RunXML is the parser struct that tracks the xml parsing
+// RunXML is the parser instance that tracks the holds all state info
 type RunXML struct {
 	ValidateClosingTag bool
-	nodeArena          NodeArena      // Optimizing memory allocations
-	attributeArena     AttributeArena // Optimizing memory allocations
+	nodeArena          nodeArena      // Optimizing memory allocations
+	attributeArena     attributeArena // Optimizing memory allocations
 	data               []byte         // Data buffer
 	position           int            // Internal read position
 	// Config settings
 }
 
-// NewDefaultRunXML creates a standard setup. You are free to setup from your own preferences
+// NewDefaultRunXML creates a standard parser setup.
 func NewDefaultRunXML() *RunXML {
 	r := new(RunXML)
 	r.ValidateClosingTag = true
 	return r
 }
 
-// ParseFile is a wrapper for Parse to simplify
+// ParseFile is a wrapper for Parse to simplify loading of files
 func (r *RunXML) ParseFile(fn string) (*GenericNode, error) {
 	bs, err := ioutil.ReadFile(fn)
 	if err != nil {
@@ -33,7 +33,7 @@ func (r *RunXML) ParseFile(fn string) (*GenericNode, error) {
 }
 
 // Parse parses the entire byte slice.
-// Returns a pointer to GenericNode, representing the entire XML tree
+// Returns a pointer to GenericNode, representing the entire XML DOM-tree
 func (r *RunXML) Parse(b []byte) (*GenericNode, error) {
 	r.position = 0
 	r.data = b
@@ -49,7 +49,7 @@ func (r *RunXML) Parse(b []byte) (*GenericNode, error) {
 		c := r.getCurrentByte()
 		if c == '<' {
 			r.position++
-			node, err := r.ParseNode()
+			node, err := r.parseNode()
 			if err != nil {
 				return node, r.contextError(err)
 			}
@@ -61,8 +61,8 @@ func (r *RunXML) Parse(b []byte) (*GenericNode, error) {
 	return doc, nil
 }
 
-// ParseNode is the highest level parsing method; expects position to be after a '<'
-func (r *RunXML) ParseNode() (*GenericNode, error) {
+// parseNode is the highest level parsing method; expects position to be after a '<'
+func (r *RunXML) parseNode() (*GenericNode, error) {
 	//log.Println("parsing node at position", r.position, string(r.sliceForward(20)))
 	c := r.data[r.position]
 	switch c {
@@ -116,7 +116,7 @@ func (r *RunXML) ParseNode() (*GenericNode, error) {
 			if bytes.HasPrefix(r.sliceToEnd(), []byte("OCTYPE")) && lookupWhitespace[r.data[r.position+6]] == 1 {
 				// "<!DOCTYPE "
 				r.skipBytes(6)
-				return r.ParseDocType()
+				return r.parseDocType()
 			}
 			fallthrough //? needed ?
 		case 0: // zerobyte returned, not legal
@@ -148,7 +148,7 @@ func (r *RunXML) ParseAttributes(element *GenericNode) error {
 		start := r.position
 		r.position++
 		r.skip(lookupAttributeName)
-		attrNode := r.attributeArena.Get() // Fetch new node
+		attrNode := r.attributeArena.get() // Fetch new node
 		attrNode.Name = r.sliceFrom(start)
 		element.AppendAttribute(attrNode)
 
@@ -268,7 +268,7 @@ func (r *RunXML) ParseNodeContents(cn *GenericNode) error {
 			}
 			// Child node
 			//log.Println("child node")
-			child, err := r.ParseNode()
+			child, err := r.parseNode()
 			if err != nil {
 				return err
 			}
@@ -287,8 +287,8 @@ func (r *RunXML) ParseNodeContents(cn *GenericNode) error {
 	}
 }
 
-// ParseDocType returns the Doctype Node
-func (r *RunXML) ParseDocType() (*GenericNode, error) {
+// parseDocType returns the Doctype Node
+func (r *RunXML) parseDocType() (*GenericNode, error) {
 	start := r.position
 	// skip to > , we haven't closed the tag yet
 	// since doctype can contain other elements, it can be somewhat tricky to detect in an efficient

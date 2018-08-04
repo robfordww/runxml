@@ -1,8 +1,8 @@
 package runxml
 
-// NodeArena is a preallokated memory regions; to increase speed by preventing
+// nodeArena is a preallokated memory regions; to increase speed by preventing
 // several sequential small allocations
-type NodeArena []GenericNode
+type nodeArena []GenericNode
 
 // Memory allocation parameter.  Start with STARTSIZE and increase by 2x
 // until MAXSIZE
@@ -13,9 +13,9 @@ const (
 
 var currentSize = startsize
 
-// Get an GenericNode node from the arena
-func (na *NodeArena) Get() *GenericNode {
-	//return &fakeg
+// get an GenericNode node from the arena
+func (na *nodeArena) get() *GenericNode {
+	// create new structs if empty
 	if len(*na) == 0 {
 		*na = make([]GenericNode, currentSize)
 		currentSize *= 2
@@ -28,17 +28,19 @@ func (na *NodeArena) Get() *GenericNode {
 	return n
 }
 
-// AttributeArena is a preallokated memory regions; to increase speed by preventing
+// attributeArena is a preallokated memory regions; to increase speed by preventing
 // several sequential small allocations
-type AttributeArena []AttributeNode
+type attributeArena []AttributeNode
 
-// Get an Attribute node from the arena
-func (aa *AttributeArena) Get() *AttributeNode {
+var currAttrSize = startsize
+
+// get an Attribute node from the arena
+func (aa *attributeArena) get() *AttributeNode {
 	//return &fake
 	if len(*aa) == 0 {
-		*aa = make([]AttributeNode, currentSize)
-		currentSize *= 2
-		currentSize = min(maxsize, currentSize)
+		*aa = make([]AttributeNode, currAttrSize)
+		currAttrSize *= 2
+		currAttrSize = min(maxsize, currAttrSize)
 	}
 	n := &(*aa)[len(*aa)-1] // last elem
 	*aa = (*aa)[:len(*aa)-1]

@@ -10,30 +10,37 @@ import (
 	"time"
 
 	"github.com/robfordww/runxml"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
-func TestWikipediaLargeXML(t *testing.T) {
+func openLargeTestFile(t *testing.T) *runxml.GenericNode {
 	rx := runxml.NewDefaultRunXML()
-	//f, err := os.Open("xmltestfiles/enwiki-20180220-pages-logging20.xml.gz")
-	f, err := os.Open("../xmltestfiles/enwiki_short.xml.gz")
+	//f, err := os.Open("../../xmltestfiles/enwiki_short.xml.gz")
+	f, err := os.Open("../../xmltestfiles/enwiki-20180220-pages-logging20.xml.gz")
+	defer f.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
 	gr, err := gzip.NewReader(f)
+	defer gr.Close()
 	if err != nil {
-		t.Fatalf(err)
+		t.Fatal(err)
 	}
 	b, err := ioutil.ReadAll(gr)
+	t.Log("Size of data:", len(b)/1E6, "MB")
 	if err != nil {
-		t.Fatalf(err)
+		t.Fatal(err)
 	}
-
+	fmt.Println("Parse start", time.Now())
 	documentNode, err := rx.Parse(b)
+	fmt.Println("Parse stop", time.Now())
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
+	return documentNode
+}
+
+func TestWikipediaLargeXML(t *testing.T) {
+	documentNode := openLargeTestFile(t)
 	root := documentNode.GetFirstChild()
 	ch := root.SendCloseChildren()
 
@@ -42,7 +49,7 @@ func TestWikipediaLargeXML(t *testing.T) {
 	l.MapXML(ch)
 
 	fmt.Print(root.CountChildren())
-	spew.Dump(l)
+	//spew.Dump(l)
 }
 
 // LogItems <-- <logitem>
@@ -51,7 +58,7 @@ type LogItems []LogItem
 // Arraymapping
 func (l *LogItems) MapXML(ch chan *runxml.GenericNode) {
 	for n := range ch {
-		spew.Dump(n)
+		//spew.Dump(n)
 		if string(n.Name) == "logitem" {
 			// Find first relevant element
 			// If target is array, pass the channel to its method, and add the result
@@ -108,6 +115,9 @@ func (c *Contributor) MapXML(ch chan *runxml.GenericNode) {
 	// continue reading the channel
 	for j := range ch { // continue
 		//fmt.Print(string(j.Name), "/", j.NodeType, "\n")
+		if j == nil {
+			panic("nil pointer")
+		}
 		switch string(j.Name) {
 		case "username":
 			c.Username = string(j.Value)
