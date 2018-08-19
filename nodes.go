@@ -70,15 +70,96 @@ func (g *GenericNode) AppendAttribute(a *AttributeNode) {
 // AppendNode appends a new child node to a node
 func (g *GenericNode) AppendNode(child *GenericNode) {
 	if g.firstChild != nil {
-		// append
+		// append to existing structure
 		g.lastChild.nextSibling = child
 		child.prevSibling = g.lastChild
 	} else {
-		// its the first node
+		// it becomes the first child
 		g.firstChild = child
 	}
 	g.lastChild = child // lastnode is the last inserted
 	child.Parent = g
+}
+
+// PrependNode inserts a child as the first node
+func (g *GenericNode) PrependNode(child *GenericNode) {
+	if g.firstChild != nil {
+		// first update the existing child
+		g.firstChild.prevSibling = child
+		child.nextSibling = g.firstChild
+	} else {
+		// its the first node
+		g.firstChild = child
+	}
+	g.firstChild = child // lastnode is the last inserted
+	child.Parent = g
+}
+
+// InsertNode inserts a child before the specified child node
+func (g *GenericNode) InsertNode(where, child *GenericNode) {
+	if g.firstChild == where {
+		g.PrependNode(child)
+		return
+	}
+	if where.Parent != g {
+		panic("attempted to insert at non-existing position")
+	}
+	child.prevSibling = where.prevSibling
+	child.nextSibling = where
+	where.prevSibling.nextSibling = child
+	where.prevSibling = child
+	child.Parent = g
+}
+
+// RemoveFirstNode deletes the first child of the node
+func (g *GenericNode) RemoveFirstNode() {
+	if g.firstChild == nil {
+		return // nothing to remove
+	}
+	g.firstChild = g.firstChild.nextSibling
+	if g.firstChild == nil {
+		// no children left, update lastchild to nil too
+		g.lastChild = nil
+		return
+	}
+	g.firstChild.prevSibling = nil
+}
+
+// RemoveLastNode deletes the last child of the node
+func (g *GenericNode) RemoveLastNode() {
+	if g.lastChild == nil {
+		return // nothing to remove
+	}
+	g.lastChild = g.lastChild.prevSibling
+	if g.lastChild == nil {
+		// no children left, update first child too
+		g.firstChild = nil
+		return
+	}
+	g.lastChild.nextSibling = nil
+}
+
+// RemoveNode deletes a particular child node of the current node
+func (g *GenericNode) RemoveNode(where *GenericNode) {
+	if where == g.firstChild {
+		g.RemoveFirstNode()
+		return
+	} else if where == g.lastChild {
+		g.RemoveLastNode()
+		return
+	}
+	if where.Parent != g {
+		panic("attempting to remove non-child node")
+	}
+	// splice where's siblings
+	where.prevSibling.nextSibling = where.nextSibling
+	where.nextSibling.prevSibling = where.prevSibling
+}
+
+// RemoveAllNodes removes all child nodes, but not attributes of the current node
+func (g *GenericNode) RemoveAllNodes() {
+	g.firstChild = nil
+	g.lastChild = nil
 }
 
 // String representation of a GenericNode
@@ -222,3 +303,18 @@ func (a *AttributeNode) String() string {
 	return fmt.Sprintf("Attribute Name: \"%s\" Value: \"%s\" Parent: %p Prev: %p Next: %p",
 		a.Name, a.Value, a.Parent, a.prev, a.next)
 }
+
+// --function prepend_node(xml_node< Ch > *child)
+// --function append_node(xml_node< Ch > *child)
+// --function insert_node(xml_node< Ch > *where, xml_node< Ch > *child)
+// -- function remove_first_node()
+// -- function remove_last_node()
+// -- function remove_node(xml_node< Ch > *where)
+// function remove_all_nodes()
+// function prepend_attribute(xml_attribute< Ch > *attribute)
+// function append_attribute(xml_attribute< Ch > *attribute)
+// function insert_attribute(xml_attribute< Ch > *where, xml_attribute< Ch > *attribute)
+// function remove_first_attribute()
+// function remove_last_attribute()
+// function remove_attribute(xml_attribute< Ch > *where)
+// function remove_all_attributes()
