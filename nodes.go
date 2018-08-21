@@ -41,8 +41,8 @@ type GenericNode struct {
 	lastChild      *GenericNode   // pointer to last child node
 	firstAttribute *AttributeNode // pointer to first attribute node
 	lastAttribute  *AttributeNode // pointer to last attribute node
-	prevSibling    *GenericNode   // pointer to previous sibling of node
-	nextSibling    *GenericNode   // pointer to next sibling of node
+	prev           *GenericNode   // pointer to previous sibling of node
+	next           *GenericNode   // pointer to next sibling of node
 }
 
 // Mempool for allocation
@@ -54,28 +54,16 @@ func newNode(nodeType NodeType) *GenericNode {
 	return n
 }
 
-// AppendAttribute appends an attribute to a node
-func (g *GenericNode) AppendAttribute(a *AttributeNode) {
-	if g.lastAttribute == nil {
-		g.firstAttribute = a
-		g.lastAttribute = a
-	} else {
-		a.prev = g.lastAttribute // point new attribute to the current last attribute
-		g.lastAttribute.next = a // old a.next point to next attribute
-		g.lastAttribute = a      // move pointer to last
-	}
-	a.Parent = g
-}
-
 // AppendNode appends a new child node to a node
 func (g *GenericNode) AppendNode(child *GenericNode) {
-	if g.firstChild != nil {
-		// append to existing structure
-		g.lastChild.nextSibling = child
-		child.prevSibling = g.lastChild
-	} else {
-		// it becomes the first child
+	if g.firstChild == nil {
+		// it becomes the first child if no nodes
+		// exist
 		g.firstChild = child
+	} else {
+		// append to existing structure
+		g.lastChild.next = child
+		child.prev = g.lastChild
 	}
 	g.lastChild = child // lastnode is the last inserted
 	child.Parent = g
@@ -83,13 +71,14 @@ func (g *GenericNode) AppendNode(child *GenericNode) {
 
 // PrependNode inserts a child as the first node
 func (g *GenericNode) PrependNode(child *GenericNode) {
-	if g.firstChild != nil {
-		// first update the existing child
-		g.firstChild.prevSibling = child
-		child.nextSibling = g.firstChild
+	if g.firstChild == nil {
+		// special case if there are no attributes
+		// otherwise, last is not affected
+		g.lastChild = child
 	} else {
-		// its the first node
-		g.firstChild = child
+		// first update the existing child
+		g.firstChild.prev = child
+		child.next = g.firstChild
 	}
 	g.firstChild = child // lastnode is the last inserted
 	child.Parent = g
@@ -104,10 +93,10 @@ func (g *GenericNode) InsertNode(where, child *GenericNode) {
 	if where.Parent != g {
 		panic("attempted to insert at non-existing position")
 	}
-	child.prevSibling = where.prevSibling
-	child.nextSibling = where
-	where.prevSibling.nextSibling = child
-	where.prevSibling = child
+	child.prev = where.prev
+	child.next = where
+	where.prev.next = child
+	where.prev = child
 	child.Parent = g
 }
 
@@ -116,13 +105,13 @@ func (g *GenericNode) RemoveFirstNode() {
 	if g.firstChild == nil {
 		return // nothing to remove
 	}
-	g.firstChild = g.firstChild.nextSibling
+	g.firstChild = g.firstChild.next
 	if g.firstChild == nil {
 		// no children left, update lastchild to nil too
 		g.lastChild = nil
 		return
 	}
-	g.firstChild.prevSibling = nil
+	g.firstChild.prev = nil
 }
 
 // RemoveLastNode deletes the last child of the node
@@ -130,13 +119,13 @@ func (g *GenericNode) RemoveLastNode() {
 	if g.lastChild == nil {
 		return // nothing to remove
 	}
-	g.lastChild = g.lastChild.prevSibling
+	g.lastChild = g.lastChild.prev
 	if g.lastChild == nil {
 		// no children left, update first child too
 		g.firstChild = nil
 		return
 	}
-	g.lastChild.nextSibling = nil
+	g.lastChild.next = nil
 }
 
 // RemoveNode deletes a particular child node of the current node
@@ -152,8 +141,8 @@ func (g *GenericNode) RemoveNode(where *GenericNode) {
 		panic("attempting to remove non-child node")
 	}
 	// splice where's siblings
-	where.prevSibling.nextSibling = where.nextSibling
-	where.nextSibling.prevSibling = where.prevSibling
+	where.prev.next = where.next
+	where.next.prev = where.prev
 }
 
 // RemoveAllNodes removes all child nodes, but not attributes of the current node
@@ -165,7 +154,7 @@ func (g *GenericNode) RemoveAllNodes() {
 // String representation of a GenericNode
 func (g *GenericNode) String() string {
 	return fmt.Sprintf("NodeType: \"%v\" Name: \"%s\" Value: \"%s\"\nParent: %p FirstNode: %p LastNode: %p FirstAttribute: %p LastAttribute: %p PrevSibling: %p NextSibling: %p",
-		g.NodeType, g.Name, g.Value, g.Parent, g.firstChild, g.lastChild, g.firstAttribute, g.lastAttribute, g.prevSibling, g.nextSibling)
+		g.NodeType, g.Name, g.Value, g.Parent, g.firstChild, g.lastChild, g.firstAttribute, g.lastAttribute, g.prev, g.next)
 }
 
 // PrintChildren prints a representation of the node, including its children
@@ -217,7 +206,7 @@ func (g *GenericNode) SendCloseChildren() (ret chan *GenericNode) {
 			close(ret)
 			return
 		}
-		for n := g.firstChild; ; n = n.nextSibling {
+		for n := g.firstChild; ; n = n.next {
 			ret <- n
 			// if it is the last node, break
 			if n == g.lastChild {
@@ -243,8 +232,8 @@ func (g *GenericNode) SendChildElements() (ret chan *GenericNode) {
 			trav(g.firstChild)
 		}
 		// no more children, look for next sibling
-		if g.nextSibling != nil {
-			trav(g.nextSibling)
+		if g.next != nil {
+			trav(g.next)
 		}
 		// no more siblings
 		return
@@ -272,14 +261,14 @@ func (g *GenericNode) GetLastChild() *GenericNode {
 // if no siblings exist, or we reached the end of the siblings
 // it returns null
 func (g *GenericNode) GetNextSibling() *GenericNode {
-	return g.nextSibling
+	return g.next
 }
 
 // GetPreviousSibling returns the previous sibling of the node,
 // if no siblings exist, or we reached the first of the siblings
 // it returns null
 func (g *GenericNode) GetPreviousSibling() *GenericNode {
-	return g.prevSibling
+	return g.prev
 }
 
 // GetAttributes returns a slice of pointers to the attributes of the node
@@ -289,6 +278,45 @@ func (g *GenericNode) GetAttributes() []*AttributeNode {
 		retAttrrib = append(retAttrrib, i)
 	}
 	return retAttrrib
+}
+
+// AppendAttribute appends an attribute to a node
+func (g *GenericNode) AppendAttribute(a *AttributeNode) {
+	if g.firstAttribute == nil {
+		g.firstAttribute = a
+	} else {
+		g.lastAttribute.next = a // old a.next point to next attribute
+		a.prev = g.lastAttribute // point new attribute to the current last attribute
+	}
+	g.lastAttribute = a // move pointer to last
+	a.Parent = g
+}
+
+// PrependAttribute prepends an attribute to the current node
+func (g *GenericNode) PrependAttribute(a *AttributeNode) {
+	if g.firstAttribute == nil {
+		// special case if there are no attributes
+		// otherwise, last is not affected
+		g.lastAttribute = a
+	} else {
+		// update the existing first's previous node
+		g.firstAttribute.prev = a
+		a.next = g.firstAttribute
+	}
+	g.firstAttribute = a
+	g.Parent = g
+}
+
+// InsertAttribute inserts an attribute before the specified
+// child node
+func (g *Generic) InsertAttribute(where, a *AttributeNode) {
+	if g.firstAttribute == where {
+		g.PrependAttribute(a)
+	} else if where.Parent != g {
+		panic("attemted to insert attribute at non-exising position")
+	} else {
+		a.prev = g.TODO
+	}
 }
 
 // AttributeNode represents the attribute (a="abc") of a node
@@ -310,7 +338,7 @@ func (a *AttributeNode) String() string {
 // -- function remove_first_node()
 // -- function remove_last_node()
 // -- function remove_node(xml_node< Ch > *where)
-// function remove_all_nodes()
+// -- function remove_all_nodes()
 // function prepend_attribute(xml_attribute< Ch > *attribute)
 // function append_attribute(xml_attribute< Ch > *attribute)
 // function insert_attribute(xml_attribute< Ch > *where, xml_attribute< Ch > *attribute)
