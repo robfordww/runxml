@@ -309,13 +309,17 @@ func (g *GenericNode) PrependAttribute(a *AttributeNode) {
 
 // InsertAttribute inserts an attribute before the specified
 // child node
-func (g *Generic) InsertAttribute(where, a *AttributeNode) {
+func (g *GenericNode) InsertAttribute(where, a *AttributeNode) {
 	if g.firstAttribute == where {
 		g.PrependAttribute(a)
 	} else if where.Parent != g {
 		panic("attemted to insert attribute at non-exising position")
 	} else {
-		a.prev = g.TODO
+		a.prev = where.prev
+		a.next = where
+		where.prev.next = a
+		where.prev = a
+		a.Parent = g
 	}
 }
 
