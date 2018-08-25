@@ -323,6 +323,41 @@ func (g *GenericNode) InsertAttribute(where, a *AttributeNode) {
 	}
 }
 
+// RemoveFirstAttribute deletes the first attribute
+func (g *GenericNode) RemoveFirstAttribute() {
+	if g.firstAttribute == nil {
+		return // empty
+	}
+	g.firstAttribute = g.firstAttribute.next
+	if g.firstAttribute == nil {
+		// we deleted the last one
+		g.lastAttribute = nil
+	} else {
+		g.firstAttribute.prev = nil
+	}
+}
+
+// RemoveLastAttribute delets the last attribute
+func (g *GenericNode) RemoveLastAttribute() {
+	TODO
+}
+
+// RemoveAttribute deletes the specified attribute
+func (g *GenericNode) RemoveAttribute(where *AttributeNode) {
+	if where.Parent != g {
+		panic("attribute is not child")
+	}
+	if g.firstAttribute == where {
+		g.RemoveFirstAttribute()
+	} else if g.lastAttribute == where {
+		g.RemoveLastNode()
+	} else {
+		// splice the chain
+		where.prev.next = where.next
+		where.next.prev = where.prev
+	}
+}
+
 // AttributeNode represents the attribute (a="abc") of a node
 type AttributeNode struct {
 	base
@@ -343,9 +378,9 @@ func (a *AttributeNode) String() string {
 // -- function remove_last_node()
 // -- function remove_node(xml_node< Ch > *where)
 // -- function remove_all_nodes()
-// function prepend_attribute(xml_attribute< Ch > *attribute)
-// function append_attribute(xml_attribute< Ch > *attribute)
-// function insert_attribute(xml_attribute< Ch > *where, xml_attribute< Ch > *attribute)
+// -- function prepend_attribute(xml_attribute< Ch > *attribute)
+// -- function append_attribute(xml_attribute< Ch > *attribute)
+// -- function insert_attribute(xml_attribute< Ch > *where, xml_attribute< Ch > *attribute)
 // function remove_first_attribute()
 // function remove_last_attribute()
 // function remove_attribute(xml_attribute< Ch > *where)
