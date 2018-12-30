@@ -339,7 +339,16 @@ func (g *GenericNode) RemoveFirstAttribute() {
 
 // RemoveLastAttribute delets the last attribute
 func (g *GenericNode) RemoveLastAttribute() {
-	TODO
+	if g.lastAttribute == nil {
+		return
+	}
+	g.lastAttribute = g.lastAttribute.prev
+	if g.lastAttribute == nil {
+		// we deleted the last attribute
+		g.lastAttribute = nil
+	} else {
+		g.lastAttribute.next = nil
+	}
 }
 
 // RemoveAttribute deletes the specified attribute
