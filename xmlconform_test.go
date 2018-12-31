@@ -1,9 +1,6 @@
 package runxml
 
 import (
-	"encoding/xml"
-	"log"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -132,41 +129,6 @@ func testhelp(t *testing.T, r *RunXML, f []string, excludeList map[string]bool, 
 			t.Log(fn, "expected success, but test failed:", err)
 			pf.PrintChildren()
 			t.FailNow()
-		}
-	}
-}
-
-// Does some tests with the stock XML library. Not a part of the runxml testsuite
-func _TestValidFilesInStockXML(t *testing.T) {
-	for i := range testDirs {
-		f, err := filepath.Glob(testDirs[i].path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, fn := range f {
-			testhelpStock(fn)
-		}
-	}
-}
-
-/* For development; tests of the stock XML parser in GO */
-func _TestSpecificFileStock(t *testing.T) {
-	file := `xmltestfiles\xmlconf\xmltest\not-wf\sa\035.xml`
-	testhelpStock(file)
-}
-
-func testhelpStock(fn string) {
-	fr, err := os.Open(fn)
-	defer fr.Close()
-	r := xml.NewDecoder(fr)
-	for {
-		_, err = r.Token()
-		if err != nil {
-			if err.Error() == "EOF" {
-				break
-			}
-			log.Println(fn, ": ", err)
-			break
 		}
 	}
 }

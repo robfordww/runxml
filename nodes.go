@@ -219,10 +219,14 @@ func (g *GenericNode) SendCloseChildren() (ret chan *GenericNode) {
 }
 
 // SendChildElements returns a channel of pointers to
-// itself and all child elements of the node
+// all child elements of the node
 func (g *GenericNode) SendChildElements() (ret chan *GenericNode) {
 	if g == nil {
 		panic("node is nil")
+	}
+	if g.firstChild == nil {
+		close(ret)
+		return
 	}
 	ret = make(chan *GenericNode, 100)
 	var trav func(g *GenericNode)
@@ -239,7 +243,7 @@ func (g *GenericNode) SendChildElements() (ret chan *GenericNode) {
 		return
 	}
 	go func() {
-		trav(g)
+		trav(g.firstChild)
 		close(ret)
 	}()
 	return

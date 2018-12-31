@@ -30,7 +30,7 @@ func TestSimpleXML2(t *testing.T) {
 	}
 	docC := doc.CountChildren()
 	if docC != 8 {
-		t.Error("expected 5 children, found", docC)
+		t.Error("expected 7 children, found", docC)
 	}
 	count := 0
 	for range doc.SendChildElements() {
