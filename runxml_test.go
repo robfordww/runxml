@@ -19,6 +19,23 @@ func TestSimpleXML(t *testing.T) {
 	}
 }
 
+func TestHandelingOfSpaces(t *testing.T) {
+	// wrong start of xml
+	xml := []byte("<root><name> xyz &amp; </name>    </root>")
+	r := NewDefaultRunXML()
+	gn, err := r.Parse(xml)
+	if err != nil {
+		t.Fatal("Should not fail")
+	}
+	expected := ` xyz & `
+	if string(gn.firstChild.firstChild.Value) != expected {
+		t.Error("Data node does not contain the expected data", `'`+expected+`'`)
+	}
+	if gn.CountChildren() != 3 {
+		t.Error("Expected 3 children")
+	}
+}
+
 func TestSimpleXML2(t *testing.T) {
 	// wrong start of xml
 	xml := []byte(`<dogregister version="1"> <dog><name alive='false'>Fido</name></dog> 
@@ -29,7 +46,7 @@ func TestSimpleXML2(t *testing.T) {
 		t.Fatal("should not fail", err)
 	}
 	docC := doc.CountChildren()
-	if docC != 8 {
+	if docC != 7 {
 		t.Error("expected 7 children, found", docC)
 	}
 	count := 0

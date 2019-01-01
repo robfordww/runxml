@@ -216,7 +216,7 @@ func (r *RunXML) parseElement() (*GenericNode, error) {
 		return nil, err
 	}
 
-	// determine ending type
+	// Determine ending type
 	c := r.getCurrentByte()
 	if c == '>' {
 		r.position++
@@ -234,11 +234,11 @@ func (r *RunXML) parseElement() (*GenericNode, error) {
 	return currentElement, nil
 }
 
-// parseNodeContents Parse contents of the node - children, data etc.
+// parseNodeContents Parse contents of the node - children elements, data etc.
 func (r *RunXML) parseNodeContents(cn *GenericNode) error {
 	// For all children and text
 	for {
-		//contentStart := r.position
+		contentStart := r.position
 		r.skip(lookupWhitespace)
 	AfterDataNode:
 		c := r.getCurrentByte()
@@ -278,7 +278,10 @@ func (r *RunXML) parseNodeContents(cn *GenericNode) error {
 
 		// Data node in node, create data node
 		default:
-			err := r.parseAndAppendData(cn)
+			// this was a data node, so we shoudl reset r position to the start of
+			// the datanote to include all data in the node
+			r.position = contentStart
+			err := r.appendDataNode(cn)
 			if err != nil {
 				return err
 			}
@@ -555,8 +558,8 @@ func (r *RunXML) skipAndExpandCharacterRefs(stopPred, stopPredPure *[256]byte) [
 	return r.data[start:trail]
 }
 
-// parseAndAppendData adds a data node to the parent node.
-func (r *RunXML) parseAndAppendData(parent *GenericNode) error {
+// appendDataNode adds a data node to the parent node.
+func (r *RunXML) appendDataNode(parent *GenericNode) error {
 	value := r.skipAndExpandCharacterRefs(lookupText, lookupTextPureNoWS)
 	if value == nil {
 		return fmt.Errorf("unable to append data node")

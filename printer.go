@@ -10,25 +10,67 @@ import "fmt"
 // 	Declaration                 //!< A declaration node. Name and value are empty. Declaration parameters (version, encoding and standalone) are in node attributes.
 // 	Doctype                     //!< A DOCTYPE node. Name is empty. Value contains DOCTYPE text.
 // 	Pi                          //!< A PI node. Name contains target. Value contains instructions.
-func (r *GenericNode) PrintXML() {
-	for c := range r.SendChildElements() {
-		switch c.NodeType {
-		case Document:
-			continue // Nothing to print
+
+// PrintXML writes to stdout an XML representation of the node structure.
+func (g *GenericNode) PrintXML() {
+	p := printer{pretty: false}
+	p.printStructure(g)
+}
+
+// PrintXMLPretty writes to stdout an XML representation of the node structure and inserting
+// indenting and line breaking characters for prettier formatting
+func (g *GenericNode) PrintXMLPretty() {
+	p := printer{pretty: true}
+	p.printStructure(g) // Not implemented yet
+}
+
+// printer holds variables for printer settings
+type printer struct {
+	pretty      bool
+	indentvalue int
+}
+
+// PrintXML writes a textual representation from children of g
+func (p *printer) printStructure(gn *GenericNode) {
+	// traverse siblings
+	for s := gn; s != nil; s = s.next {
+		switch s.NodeType {
 		case Declaration:
-			continue // print attributes
+			// print attributes
 		case Element:
-			fmt.Print("<" + string(c.Name) + ">" + string(c.Value) + "</" + string(c.Name) + ">")
+			if p.pretty {
+				fmt.Println("")
+			}
+			// can have children and siblings which must be handled
+			fmt.Print("<" + string(s.Name) + ">")
+			p.traverseDepth(s)
+			fmt.Print("</" + string(s.Name) + ">")
 		case Data:
-			fmt.Print(c.Value)
+			// just print and return
+			fmt.Print(string(s.Value))
 		case Cdata:
-			fmt.Print(c.Value)
+			//  cdata needs to be embedded in a CDATA structure
+			fmt.Print(`<![CDATA[` + string(s.Value) + `]]`)
 		case Comment:
-			fmt.Print("<!--" + string(c.Value) + "-->")
+			fmt.Print("<!--" + string(s.Value) + "-->")
 		case Doctype:
-			fmt.Print("<!DOCTYPE " + string(c.Value) + ">")
+			fmt.Print("<!DOCTYPE " + string(s.Value) + ">")
+			p.traverseDepth(s)
 		case Pi:
-			fmt.Print("<?" + string(c.Name) + " " + string(c.Value))
+			fmt.Print("<?" + string(s.Name) + " " + string(s.Value))
+		case Document:
+			p.traverseDepth(s)
+		default:
+			panic("unknown node type")
 		}
+
+	}
+
+}
+
+func (p *printer) traverseDepth(g *GenericNode) {
+	if g.firstChild != nil {
+		p.indentvalue++
+		p.printStructure(g.firstChild)
 	}
 }

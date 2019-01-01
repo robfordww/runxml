@@ -186,7 +186,7 @@ func (g *GenericNode) PrintChildren() {
 	}
 }
 
-//CountChildren returns the current nodes number of child nodes
+// CountChildren returns the nodes number of childre. The node itself is not included.
 func (g *GenericNode) CountChildren() int {
 	count := 0
 	for range g.SendChildElements() {
